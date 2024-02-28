@@ -1,4 +1,4 @@
-# Simple Makefile for compile and upload your AVR assembly project
+#Simple Makefile for compile and upload your AVR assembly project
 MCU       = attiny10
 FILE      = attinybz
 PGMR      = usbasp
