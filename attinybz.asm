@@ -19,7 +19,7 @@
     .org 0x004 
     rjmp TIM0_OVF
 RESET:
-    ldi temp, high(ramend); инициализация стека ->
+    ldi temp, high(ramend); stek init ->
     out sph, temp 
     ldi temp, low(ramend)
     out spl, temp ; <- *
