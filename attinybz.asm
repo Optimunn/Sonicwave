@@ -4,13 +4,13 @@
 
     .include "tn10def.inc"
 
-    .def tree  = r19 
-    .def sys   = r21
-    .def temp  = r20 
-    .def regst = r22 
-    .def tone  = r23                ;memory
-    .def count = r24                ;memory
-    .def flag  = r25                ;memory
+    .def tree  = r19                ;second default register
+    .def sys   = r21                ;dafault register in SYCLES
+    .def temp  = r20                ;using in initialisation and in interrupt
+    .def regst = r22                ;second interrupt register
+    .def tone  = r23                ;sound tone counter
+    .def count = r24                ;this register used in PWM count
+    .def flag  = r25                ;bit flag
 
     .dseg
     .cseg
@@ -37,38 +37,35 @@ RESET:
 
     ldi tone, 140                   ; set start tone to 140
     sei                             ; resolving interrupts
-LOOP:
+CYCLES:
     sbis PINB0, 0                   ; if pin0 == 1 skip the following command
     sbr flag, 1 
 
     cpi count, 150                  ; if count == 150 jump to Ps
     brsh Branch
-    rjmp LOOP
+    rjmp CYCLES
 Branch:  
     clr count
     sbrc flag, 1                    ; if bit1 in flag == low jump to vaeup
-    breq vaveup                     ; SBRS - установлен
+    breq vaveup                     
     sbrs flag, 1                    ; fi bit1 in flag == hight jump to vavedn
     breq vavedn
 vaveup:
     inc tone                        ; tone++
     cpi tone, 180
     breq rvave
-    rjmp LOOP
+    rjmp CYCLES
 vavedn:
     dec tone                        ; tone--
     cpi tone, 130
     breq rvave
-    rjmp LOOP
+    rjmp CYCLES
 rvave:
     ldi sys, 0b10
     eor flag, sys
+    rcall RED
 
-    ldi sys, 0b100
-    in tree, PORTB
-    eor tree, sys
-    out PORTB, tree 
-    rjmp LOOP
+    rjmp CYCLES
 TIM0_OVF:                           ; interrupt vector
     cli
     inc count
@@ -85,5 +82,11 @@ PIN:
     in regst, PORTB
     eor regst, temp
     out PORTB, regst  
-    ret 
+    ret
+RED: 
+    ldi sys, 0b100
+    in tree, PORTB
+    eor tree, sys
+    out PORTB, tree 
+    ret
     
