@@ -1,9 +1,6 @@
-;buser in attiny10
-;frequensy modulation
-;3 - 6 kHz
-
     .include "tn10def.inc"
 
+    .def timer = r18                ;delay to turn on speaker
     .def tree  = r19                ;second default register
     .def sys   = r21                ;dafault register in SYCLES
     .def temp  = r20                ;using in initialisation and in interrupt
@@ -24,15 +21,14 @@ RESET:
     ldi temp, low(ramend)
     out spl, temp                   ; <- *
 
-    ldi temp, 0b110                 ; set ports 1 and 2 to out
+    ldi temp, 0b110                 ; set ports 1 and 2 to output
     out DDRB, temp 
     ldi temp, 0b001                 ; set input pulup on pin 0
     out PUEB, temp
 
-    ldi temp, 0b00000001            ; set clock to 1:1
-    out TCCR0B, temp
-    ldi temp, 0b1                   ; inisialize interrupts
-    out TIMSK0, temp
+    ldi temp, 0b1           
+    out TCCR0B, temp                ; set clock to 1:1      
+    out TIMSK0, temp                ; inisialize interrupts
     out TIFR0, temp 
 
     ldi tone, 140                   ; set start tone to 140
