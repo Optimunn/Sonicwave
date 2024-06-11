@@ -12,7 +12,7 @@
 
     .equ maxTone    = 190
     .equ minTone    = 120
-    .equ waitTime   = 5             ;if 20 ~= 25 sec
+    .equ waitTime   = 10             ;if 20 ~= 25 sec
 
     .dseg
     .cseg
@@ -36,7 +36,7 @@ RESET:
     out TIMSK0, temp                ; inisialize interrupts
     out TIFR0, temp 
 
-    ldi tone, 170                   ; set start tone to 170
+    ldi tone, minTone+1             ; set start tone to min + 1
     sei                             ; resolving interrupts
 CYCLES:
     sbis PINB0, 0                   ; if pin0 == 1 skip the following command
@@ -44,7 +44,7 @@ CYCLES:
 
     cpi count, 150                  ; if count == 150 jump 
     brsh branch
-    cpi ledon, 15
+    cpi ledon, 15                   ; counter for led on second phase
     brlo CYCLES
     clr ledon
     sbrs flag, 0

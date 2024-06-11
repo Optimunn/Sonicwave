@@ -2,7 +2,7 @@
 MCU       = attiny10
 FILE      = attinybz
 PGMR      = usbasp
-BITCLOCK  = 125kHz
+BITCLOCK  = 250kHz
 COMPILER_PATH = /opt/homebrew/Cellar/avra
 all: compile clean upload
 
