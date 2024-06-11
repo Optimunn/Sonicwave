@@ -1,16 +1,18 @@
-;buser in attiny10
-;frequensy modulation
-;3 - 6 kHz
-
     .include "tn10def.inc"
 
-    .def tree  = r19 
-    .def sys   = r21
-    .def temp  = r20 
-    .def regst = r22 
-    .def tone  = r23 ;memory
-    .def count = r24 ;memory
-    .def flag  = r25 ;memory
+    .def ledon = r17                ;led timer control
+    .def timer = r18                ;delay to turn on speaker
+    .def oper  = r19                ;second default register
+    .def sys   = r21                ;dafault register in SYCLES
+    .def temp  = r20                ;using in initialisation and in interrupt
+    .def regst = r22                ;second interrupt register
+    .def tone  = r23                ;sound tone counter
+    .def count = r24                ;this register used in PWM count
+    .def flag  = r25                ;bit flag
+
+    .equ maxTone    = 190
+    .equ minTone    = 120
+    .equ waitTime   = 10             ;if 20 ~= 25 sec
 
     .dseg
     .cseg
@@ -19,61 +21,71 @@
     .org 0x004 
     rjmp TIM0_OVF
 RESET:
-    ldi temp, high(ramend); stek init ->
+    ldi temp, high(ramend)          ; stek init ->
     out sph, temp 
     ldi temp, low(ramend)
-    out spl, temp ; <- *
+    out spl, temp                   ; <- *
 
-    ldi temp, 0b110; set ports 1 and 2 to out
+    ldi temp, 0b110                 ; set ports 1 and 2 to output
     out DDRB, temp 
-    ldi temp, 0b001; set input pulup on pin 0
+    ldi temp, 0b001                 ; set input pulup on pin 0
     out PUEB, temp
 
-    ldi temp, 0b00000001; set clock to 1:1
-    out TCCR0B, temp
-    ldi temp, 0b1; inisialize interrupts
-    out TIMSK0, temp
+    ldi temp, 0b1           
+    out TCCR0B, temp                ; set clock to 1:1      
+    out TIMSK0, temp                ; inisialize interrupts
     out TIFR0, temp 
 
-    ldi tone, 140; set start tone to 140
-    
-    sei; resolving interrupts
-LOOP:
-    sbis PINB0, 0; if pin0 == 1 skip the following command
-    sbr flag, 1 
+    ldi tone, minTone+1             ; set start tone to min + 1
+    sei                             ; resolving interrupts
+CYCLES:
+    sbis PINB0, 0                   ; if pin0 == 1 skip the following command
+    sbr flag, 0b1 
 
-    cpi count, 150; if count == 150 jump to Ps
-    brsh Branch
-    rjmp LOOP
-Branch:  
+    cpi count, 150                  ; if count == 150 jump 
+    brsh branch
+    cpi ledon, 15                   ; counter for led on second phase
+    brlo CYCLES
+    clr ledon
+    sbrs flag, 0
+    rjmp CYCLES
+    rcall RED
+    rjmp CYCLES
+branch: 
+    inc ledon
     clr count
-    sbrc flag, 1; if bit1 in flag == low jump to vaeup
-    breq vaveup   ;SBRS - установлен
-    sbrs flag, 1; fi bit1 in flag == hight jump to vavedn
+    sbrc flag, 1                    ; if bit1 in flag == low jump to vaeup
+    breq vaveup                     
+    sbrs flag, 1                    ; fi bit1 in flag == hight jump to vavedn
     breq vavedn
 vaveup:
-    inc tone; tone++
-    cpi tone, 180
+    inc tone                        ; tone++
+    cpi tone, maxTone
     breq rvave
-    rjmp LOOP
+    rjmp CYCLES
 vavedn:
-    dec tone; tone--
-    cpi tone, 130
+    dec tone                        ; tone--
+    cpi tone, minTone
     breq rvave
-    rjmp LOOP
+    rjmp CYCLES
 rvave:
     ldi sys, 0b10
     eor flag, sys
-
-    ldi sys, 0b100
-    in tree, PORTB
-    eor tree, sys
-    out PORTB, tree 
-    rjmp LOOP
-TIM0_OVF:; interrupt vector
+    sbrs flag, 0
+    rcall RED
+    sbrc flag, 2
+    rjmp CYCLES
+    sbrs flag, 0
+    rjmp CYCLES
+    inc timer
+    cpi timer, waitTime
+    brlo CYCLES
+    sbr flag, 4
+    rjmp CYCLES
+TIM0_OVF:                           ; interrupt vector
     cli
     inc count
-    sbrc flag, 0; if bit0 in flag == 1 jump to PIN
+    sbrc flag, 2                    ; if bit0 in flag == 1 jump to PIN
     rcall PIN
 
     ldi temp, 255 
@@ -86,5 +98,11 @@ PIN:
     in regst, PORTB
     eor regst, temp
     out PORTB, regst  
-    ret 
+    ret
+RED: 
+    ldi sys, 0b100
+    in oper, PORTB
+    eor oper, sys
+    out PORTB, oper 
+    ret
     
