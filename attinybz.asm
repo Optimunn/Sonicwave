@@ -12,7 +12,7 @@
 
     .equ maxTone    = 190
     .equ minTone    = 120
-    .equ waitTime   = 10             ;if 20 ~= 25 sec
+    .equ waitTime   = 200           ;if 20 ~= 25 sec
 
     .dseg
     .cseg
